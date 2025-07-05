@@ -1,0 +1,60 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceGroupName": {
+      "value": "wyoiwyget-rg"
+    },
+    "location": {
+      "value": "East US"
+    },
+    "environment": {
+      "value": "dev"
+    },
+    "projectName": {
+      "value": "wyoiwyget"
+    },
+    "domainName": {
+      "value": "wyoiwyget.yourdomain.com"
+    },
+    "openAiServiceName": {
+      "value": "wyoiwyget-openai"
+    },
+    "acrName": {
+      "value": "wyoiwygetacr"
+    },
+    "postgresServerName": {
+      "value": "wyoiwyget-postgres"
+    },
+    "cosmosDbName": {
+      "value": "wyoiwyget-cosmos"
+    },
+    "redisName": {
+      "value": "wyoiwyget-redis"
+    },
+    "searchName": {
+      "value": "wyoiwyget-search"
+    },
+    "storageName": {
+      "value": "wyoiwygetstorage"
+    },
+    "keyVaultName": {
+      "value": "wyoiwyget-kv"
+    },
+    "apiManagementName": {
+      "value": "wyoiwyget-apim"
+    },
+    "containerAppsEnvName": {
+      "value": "wyoiwyget-cae"
+    },
+    "staticWebAppName": {
+      "value": "wyoiwyget-swa"
+    },
+    "frontDoorName": {
+      "value": "wyoiwyget-fd"
+    },
+    "b2cTenantName": {
+      "value": "wyoiwyget.onmicrosoft.com"
+    }
+  }
+} 

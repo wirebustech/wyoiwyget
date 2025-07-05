@@ -1,0 +1,566 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  username          String?  @unique
+  firstName         String?
+  lastName          String?
+  displayName       String?
+  avatar            String?
+  phone             String?
+  dateOfBirth       DateTime?
+  gender            Gender?
+  isEmailVerified   Boolean  @default(false)
+  isPhoneVerified   Boolean  @default(false)
+  isActive          Boolean  @default(true)
+  lastLoginAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  profile           UserProfile?
+  measurements      BodyMeasurement[]
+  avatars           Avatar[]
+  orders            Order[]
+  reviews           Review[]
+  wishlists         Wishlist[]
+  searchHistory     SearchHistory[]
+  notifications     Notification[]
+  sessions          Session[]
+  addresses         Address[]
+  paymentMethods    PaymentMethod[]
+  preferences       UserPreference?
+
+  @@map("users")
+}
+
+model UserProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  bio               String?
+  website           String?
+  socialLinks       Json?
+  preferences       Json?
+  privacySettings   Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// Body Measurements for Virtual Try-On
+model BodyMeasurement {
+  id                String   @id @default(cuid())
+  userId            String
+  name              String?
+  isDefault         Boolean  @default(false)
+  
+  // Core measurements
+  height            Float?   // in cm
+  weight            Float?   // in kg
+  bmi               Float?
+  
+  // Torso measurements
+  chest             Float?   // in cm
+  waist             Float?   // in cm
+  hips              Float?   // in cm
+  shoulderWidth     Float?   // in cm
+  torsoLength       Float?   // in cm
+  
+  // Limb measurements
+  armLength         Float?   // in cm
+  inseam            Float?   // in cm
+  thigh             Float?   // in cm
+  calf              Float?   // in cm
+  ankle             Float?   // in cm
+  
+  // Extremity measurements
+  neck              Float?   // in cm
+  shoeSize          Float?   // EU size
+  footWidth         Float?   // in cm
+  handLength        Float?   // in cm
+  handWidth         Float?   // in cm
+  
+  // Additional measurements
+  bodyType          BodyType?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("body_measurements")
+}
+
+// AI Avatar Management
+model Avatar {
+  id                String   @id @default(cuid())
+  userId            String
+  name              String?
+  isDefault         Boolean  @default(false)
+  
+  // Avatar data
+  modelUrl          String?  // 3D model URL
+  thumbnailUrl      String?  // Thumbnail image URL
+  metadata          Json?    // Avatar metadata
+  
+  // Generation settings
+  generationSettings Json?   // Settings used for generation
+  status            AvatarStatus @default(PENDING)
+  errorMessage      String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tryOnSessions     VirtualTryOnSession[]
+
+  @@map("avatars")
+}
+
+// E-commerce Platform Integration
+model EcommercePlatform {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  displayName       String
+  domain            String
+  logoUrl           String?
+  apiEndpoint       String?
+  apiKey            String?
+  apiSecret         String?
+  isActive          Boolean  @default(true)
+  features          Json?    // Supported features
+  rateLimits        Json?    // API rate limits
+  lastSyncAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  products          Product[]
+  orders            Order[]
+
+  @@map("ecommerce_platforms")
+}
+
+// Product Management
+model Product {
+  id                String   @id @default(cuid())
+  platformId        String
+  platformProductId String   // Original product ID from platform
+  name              String
+  description       String?
+  brand             String?
+  category          String?
+  subcategory       String?
+  
+  // Pricing
+  currentPrice      Decimal  @db.Decimal(10, 2)
+  originalPrice     Decimal? @db.Decimal(10, 2)
+  currency          String   @default("USD")
+  
+  // Product details
+  images            String[] // Array of image URLs
+  specifications    Json?    // Product specifications
+  variants          Json?    // Product variants (size, color, etc.)
+  availability      ProductAvailability @default(IN_STOCK)
+  stockQuantity     Int?
+  
+  // Ratings and reviews
+  averageRating     Float?   @db.Float
+  reviewCount       Int      @default(0)
+  
+  // Platform specific data
+  platformUrl       String
+  platformData      Json?    // Raw platform data
+  
+  // Aggregation data
+  isAggregated      Boolean  @default(false)
+  aggregatedAt      DateTime?
+  lastUpdated       DateTime @default(now())
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  platform          EcommercePlatform @relation(fields: [platformId], references: [id])
+  reviews           Review[]
+  wishlists         Wishlist[]
+  virtualTryOns     VirtualTryOnSession[]
+  priceHistory      PriceHistory[]
+  productMatches    ProductMatch[]
+
+  @@unique([platformId, platformProductId])
+  @@map("products")
+}
+
+// Product Matching for Cross-Platform Comparison
+model ProductMatch {
+  id                String   @id @default(cuid())
+  sourceProductId   String
+  targetProductId   String
+  confidence        Float    @db.Float // 0-1 confidence score
+  matchType         MatchType
+  matchCriteria     Json?    // Criteria used for matching
+  isVerified        Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  sourceProduct     Product  @relation("SourceProduct", fields: [sourceProductId], references: [id])
+  targetProduct     Product  @relation("TargetProduct", fields: [targetProductId], references: [id])
+
+  @@unique([sourceProductId, targetProductId])
+  @@map("product_matches")
+}
+
+// Price History Tracking
+model PriceHistory {
+  id                String   @id @default(cuid())
+  productId         String
+  price             Decimal  @db.Decimal(10, 2)
+  currency          String   @default("USD")
+  recordedAt        DateTime @default(now())
+
+  // Relationships
+  product           Product  @relation(fields: [productId], references: [id])
+
+  @@map("price_history")
+}
+
+// Virtual Try-On Sessions
+model VirtualTryOnSession {
+  id                String   @id @default(cuid())
+  userId            String
+  avatarId          String
+  productId         String
+  
+  // Try-on data
+  resultUrl         String?  // Generated try-on image/video URL
+  fitScore          Float?   @db.Float // 0-100 fit score
+  fitAnalysis       Json?    // Detailed fit analysis
+  recommendations   Json?    // Size/style recommendations
+  
+  // Session metadata
+  sessionData       Json?    // Session configuration
+  status            TryOnStatus @default(PENDING)
+  errorMessage      String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  avatar            Avatar   @relation(fields: [avatarId], references: [id])
+  product           Product  @relation(fields: [productId], references: [id])
+
+  @@map("virtual_try_on_sessions")
+}
+
+// Order Management
+model Order {
+  id                String   @id @default(cuid())
+  userId            String
+  platformId        String?
+  platformOrderId   String?  // Original order ID from platform
+  
+  // Order details
+  status            OrderStatus @default(PENDING)
+  totalAmount       Decimal  @db.Decimal(10, 2)
+  currency          String   @default("USD")
+  items             Json     // Order items
+  
+  // Shipping
+  shippingAddress   Json?
+  trackingNumber    String?
+  estimatedDelivery DateTime?
+  
+  // Payment
+  paymentMethod     String?
+  paymentStatus     PaymentStatus @default(PENDING)
+  transactionId     String?
+  
+  // Platform specific data
+  platformUrl       String?
+  platformData      Json?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  user              User     @relation(fields: [userId], references: [id])
+  platform          EcommercePlatform? @relation(fields: [platformId], references: [id])
+
+  @@map("orders")
+}
+
+// Reviews and Ratings
+model Review {
+  id                String   @id @default(cuid())
+  userId            String
+  productId         String
+  platformId        String?
+  
+  // Review data
+  rating            Int      // 1-5 stars
+  title             String?
+  content           String?
+  images            String[] // Review images
+  
+  // Review metadata
+  verified          Boolean  @default(false)
+  helpfulCount      Int      @default(0)
+  isPublic          Boolean  @default(true)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  user              User     @relation(fields: [userId], references: [id])
+  product           Product  @relation(fields: [productId], references: [id])
+
+  @@map("reviews")
+}
+
+// Wishlist Management
+model Wishlist {
+  id                String   @id @default(cuid())
+  userId            String
+  productId         String
+  notes             String?
+  priority          Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  user              User     @relation(fields: [userId], references: [id])
+  product           Product  @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+  @@map("wishlists")
+}
+
+// Search History
+model SearchHistory {
+  id                String   @id @default(cuid())
+  userId            String
+  query             String
+  filters           Json?
+  resultsCount      Int?
+  clickedProducts   String[] // Product IDs that were clicked
+  createdAt         DateTime @default(now())
+
+  // Relationships
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("search_history")
+}
+
+// User Sessions
+model Session {
+  id                String   @id @default(cuid())
+  userId            String
+  token             String   @unique
+  expiresAt         DateTime
+  isActive          Boolean  @default(true)
+  userAgent         String?
+  ipAddress         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("sessions")
+}
+
+// User Addresses
+model Address {
+  id                String   @id @default(cuid())
+  userId            String
+  type              AddressType
+  isDefault         Boolean  @default(false)
+  
+  // Address details
+  firstName         String
+  lastName          String
+  company           String?
+  addressLine1      String
+  addressLine2      String?
+  city              String
+  state             String
+  postalCode        String
+  country           String
+  phone             String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("addresses")
+}
+
+// Payment Methods
+model PaymentMethod {
+  id                String   @id @default(cuid())
+  userId            String
+  type              PaymentMethodType
+  isDefault         Boolean  @default(false)
+  
+  // Payment method data
+  name              String
+  lastFour          String?
+  expiryMonth       Int?
+  expiryYear        Int?
+  brand             String?
+  token             String?  // Encrypted payment token
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("payment_methods")
+}
+
+// User Preferences
+model UserPreference {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  
+  // Preferences
+  theme             String   @default("light")
+  language          String   @default("en")
+  currency          String   @default("USD")
+  timezone          String   @default("UTC")
+  notifications     Json?
+  privacy           Json?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("user_preferences")
+}
+
+// Notifications
+model Notification {
+  id                String   @id @default(cuid())
+  userId            String
+  type              NotificationType
+  title             String
+  message           String
+  data              Json?
+  isRead            Boolean  @default(false)
+  readAt            DateTime?
+  createdAt         DateTime @default(now())
+
+  // Relationships
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+// Enums
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum BodyType {
+  SLIM
+  ATHLETIC
+  AVERAGE
+  CURVY
+  PLUS_SIZE
+}
+
+enum AvatarStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum ProductAvailability {
+  IN_STOCK
+  OUT_OF_STOCK
+  PRE_ORDER
+  DISCONTINUED
+}
+
+enum MatchType {
+  EXACT
+  SIMILAR
+  RELATED
+}
+
+enum TryOnStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum AddressType {
+  BILLING
+  SHIPPING
+  BOTH
+}
+
+enum PaymentMethodType {
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  APPLE_PAY
+  GOOGLE_PAY
+  BANK_TRANSFER
+}
+
+enum NotificationType {
+  ORDER_UPDATE
+  PRICE_DROP
+  STOCK_ALERT
+  SYSTEM
+  MARKETING
+} 
