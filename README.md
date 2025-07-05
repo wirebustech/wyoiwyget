@@ -1,219 +1,263 @@
-# Wyoiwyget - Azure-Native E-commerce Aggregator Platform
+# Wyoiwyget - AI-Powered E-commerce Platform
 
-## 🚀 What You Order Is What You Get - Powered by Azure
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com/)
 
-A revolutionary AI-powered e-commerce aggregator built entirely on Microsoft Azure, featuring intelligent product discovery, photorealistic virtual try-on, and seamless multi-platform integration.
+## 🚀 Overview
 
-## ✨ Core Features
+**Wyoiwyget** is a cutting-edge, AI-powered e-commerce aggregator platform that revolutionizes online shopping through advanced artificial intelligence, virtual try-on technology, and personalized recommendations.
 
-### 🛍️ Universal Product Aggregation
-- **URL-Based Product Ingestion**: Paste any product URL from 20+ major retailers
-- **AI-Powered Product Matching**: Azure ML models for cross-platform product identification
-- **Real-Time Price Comparison**: Live tracking with Azure Functions and Service Bus
-- **Multi-Dimensional Analysis**: Compare prices, quality, specifications, and reviews
+### ✨ Key Features
 
-### 👤 AI Avatar Creation & Virtual Try-On
-- **Photorealistic 3D Avatars**: Generated using Azure OpenAI and Custom Vision
-- **Comprehensive Body Measurements**: 20+ measurement points for perfect fit
-- **Virtual Product Testing**: Try clothes, shoes, accessories, and more
-- **Fit Accuracy Scoring**: 0-100% fit prediction with ±3% real-world accuracy
+- 🤖 **AI Avatar Generation** - Create personalized avatars using Azure OpenAI
+- 👕 **Virtual Try-On** - Try clothes virtually with AI-powered body tracking
+- 📊 **Smart Recommendations** - ML-powered product suggestions
+- 💳 **Multi-Payment Support** - Stripe and PayPal integration
+- 📱 **Progressive Web App** - Native app-like experience
+- 🔒 **Enterprise Security** - Military-grade security with compliance
+- 📈 **Real-time Analytics** - Comprehensive business intelligence
+- 🌐 **Global Scalability** - Cloud-native architecture
 
-### 💳 Unified Commerce Platform
-- **Multi-Vendor Shopping Cart**: Purchase from multiple retailers in one place
-- **Direct Retailer Integration**: Seamless checkout on original sites
-- **Azure Payment Processing**: Support for all major payment methods
-- **Order Consolidation**: Track all purchases in one dashboard
+## 🏗️ Architecture
 
-## 🏗️ Azure Cloud Architecture
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Backend API   │    │   AI Services   │
+│   (Next.js)     │◄──►│   (Express.js)  │◄──►│   (FastAPI)     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │   Infrastructure │
+                    │   (Azure Cloud)  │
+                    └─────────────────┘
+```
 
-### Frontend Stack
-- **Azure Static Web Apps**: React.js with TypeScript and Next.js
-- **Azure Front Door**: Global CDN and load balancing
-- **Tailwind CSS**: Modern, responsive UI design
-- **Three.js/WebGL**: 3D avatar visualization and virtual try-on
-- **Redux Toolkit**: Complex application state management
-- **Azure SignalR**: Real-time updates and notifications
+## 🛠️ Tech Stack
 
-### Backend Services (Azure-Native)
-- **Azure API Management**: API gateway with throttling and security
-- **Azure Container Apps**: Microservices for core business logic
-- **Azure Functions**: Serverless processing and scheduled tasks
-- **Azure Service Bus**: Reliable message queuing
-- **Azure Active Directory B2C**: User authentication and management
+### Frontend
+- **Next.js 14** - React framework with TypeScript
+- **Tailwind CSS** - Utility-first CSS framework
+- **Redux Toolkit** - State management
+- **React Query** - Data fetching and caching
+- **Framer Motion** - Animations
 
-### Data Services
-- **Azure Database for PostgreSQL**: Primary database for structured data
-- **Azure Cosmos DB**: Document storage and global distribution
-- **Azure Data Explorer**: Time-series data and analytics
-- **Azure Cache for Redis**: Performance optimization and caching
-- **Azure Cognitive Search**: Advanced product search capabilities
-- **Azure Blob Storage**: Image and file storage
+### Backend
+- **Node.js** - JavaScript runtime
+- **Express.js** - Web framework
+- **TypeScript** - Type safety
+- **PostgreSQL** - Primary database
+- **Redis** - Caching and sessions
+- **JWT** - Authentication
 
-### AI/ML Services
-- **Azure OpenAI Service**: Product matching and natural language processing
-- **Azure Custom Vision**: Body measurement analysis and image processing
-- **Azure Machine Learning**: Avatar generation and recommendation algorithms
-- **Azure Cognitive Services**: Computer vision and speech services
-- **Azure ML Studio**: Model training and deployment
+### AI Services
+- **Python 3.11** - AI/ML development
+- **FastAPI** - High-performance API framework
+- **Azure OpenAI** - AI model integration
+- **Computer Vision** - Image processing
+- **Background Tasks** - Async processing
+
+### Infrastructure
+- **Azure Kubernetes Service** - Container orchestration
+- **Azure Container Registry** - Image management
+- **Azure PostgreSQL** - Managed database
+- **Azure Redis Cache** - Managed caching
+- **Azure Blob Storage** - File storage
+- **Azure Application Gateway** - Load balancing
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- **Azure CLI** (v2.45.0+)
-- **Node.js** (v18.0.0+)
-- **Python** (v3.11+)
-- **Docker** (v20.10+)
-- **Azure Subscription** with appropriate permissions
 
-### Local Development Setup
+- Node.js 18 or higher
+- Python 3.9 or higher
+- Docker and Docker Compose
+- Git
+
+### Local Development
+
+1. **Clone the repository**
 ```bash
-# Clone the repository
 git clone <repository-url>
 cd wyoiwyget
-
-# Install dependencies
-npm install
-
-# Set up Azure environment
-az login
-az account set --subscription "your-subscription-id"
-
-# Deploy to Azure
-./scripts/deploy-azure.sh
 ```
 
-### Azure Deployment
+2. **Quick setup (Recommended)**
 ```bash
-# Deploy infrastructure
-az deployment group create \
-  --resource-group wyoiwyget-rg \
-  --template-file infrastructure/main.bicep \
-  --parameters @infrastructure/parameters.json
-
-# Deploy applications
-az containerapp update \
-  --name wyoiwyget-backend \
-  --resource-group wyoiwyget-rg \
-  --image wyoiwygetacr.azurecr.io/wyoiwyget-backend:latest
+chmod +x scripts/quick-start.sh
+./scripts/quick-start.sh
 ```
 
-## 📁 Project Structure
+3. **Manual setup (Alternative)**
+```bash
+# Install dependencies
+npm run install:all
+
+# Start services
+npm run dev:all
+```
+
+4. **Access the application**
+- Frontend: http://localhost:3002
+- Backend API: http://localhost:3000
+- AI Services: http://localhost:8001
+- API Documentation: http://localhost:3000/api/docs
+
+### Docker Development
+
+```bash
+# Start all services with Docker
+docker-compose -f docker-compose.dev.yml up --build
+
+# View logs
+docker-compose -f docker-compose.dev.yml logs -f
+
+# Stop services
+docker-compose -f docker-compose.dev.yml down
+```
+
+## 📚 Documentation
+
+- [Local Development Guide](LOCAL_DEVELOPMENT.md)
+- [API Documentation](http://localhost:3000/api/docs)
+- [Architecture Overview](docs/ARCHITECTURE.md)
+- [Deployment Guide](docs/DEPLOYMENT.md)
+- [Security Guide](docs/SECURITY.md)
+
+## 🧪 Testing
+
+### Run Tests
+```bash
+# All tests
+npm run test:all
+
+# Frontend tests
+npm run test:frontend
+
+# Backend tests
+npm run test:backend
+
+# AI services tests
+npm run test:ai
+
+# Integration tests
+npm run test:integration
+
+# Load testing
+npm run test:load
+```
+
+### Test Credentials
+- Email: test@example.com
+- Password: TestPassword123!
+
+## 🚀 Deployment
+
+### Production Deployment
+```bash
+# Deploy to Azure
+./scripts/setup-production.sh
+
+# Or use the deployment script
+npm run deploy:production
+```
+
+### Environment Variables
+See `.env.example` files in each service directory for required environment variables.
+
+## 🔧 Development
+
+### Available Scripts
+
+```bash
+# Development
+npm run dev:all              # Start all services
+npm run dev:frontend         # Start frontend only
+npm run dev:backend          # Start backend only
+npm run dev:ai               # Start AI services only
+
+# Building
+npm run build:all            # Build all services
+npm run build:frontend       # Build frontend
+npm run build:backend        # Build backend
+
+# Testing
+npm run test:all             # Run all tests
+npm run test:integration     # Run integration tests
+npm run test:performance     # Run performance tests
+
+# Code Quality
+npm run lint:all             # Lint all code
+npm run format:all           # Format all code
+npm run type-check:all       # Type checking
+
+# Database
+npm run db:setup             # Setup database
+npm run db:migrate           # Run migrations
+npm run db:seed              # Seed database
+npm run db:reset             # Reset database
+
+# Monitoring
+npm run health:check         # Health check
+npm run monitor:all          # Monitor all services
+```
+
+### Project Structure
 
 ```
 wyoiwyget/
-├── frontend/                 # Azure Static Web Apps
-├── backend/                  # Azure Container Apps
-├── ai-services/             # Azure ML and AI services
-├── infrastructure/          # ARM templates and Bicep files
+├── frontend/                 # Next.js frontend application
+├── backend/                  # Express.js backend API
+├── ai-services/             # Python FastAPI AI services
+├── infrastructure/          # Infrastructure as code
 ├── scripts/                 # Deployment and utility scripts
+├── tests/                   # Test files
 ├── docs/                    # Documentation
-└── tests/                   # Test suites
+└── docker-compose.dev.yml   # Local development setup
 ```
 
-## 🎯 Development Roadmap
+## 🔒 Security
 
-### Phase 1: Azure Foundation ✅
-- [x] Azure environment setup
-- [x] Resource group organization
-- [x] Azure Active Directory B2C
-- [x] Core infrastructure deployment
-
-### Phase 2: AI Avatar System 🚧
-- [ ] Azure OpenAI integration
-- [ ] Custom Vision model training
-- [ ] Avatar generation pipeline
-- [ ] Virtual try-on interface
-
-### Phase 3: Commerce Integration 📋
-- [ ] Multi-vendor cart system
-- [ ] Azure Payment Processing
-- [ ] Order management
-- [ ] Platform optimization
-
-### Phase 4: Advanced Features 📋
-- [ ] Recommendation engine
-- [ ] Personalization algorithms
-- [ ] Performance optimization
-- [ ] Launch preparation
-
-## 🔧 Azure Services Used
-
-### Compute & Containers
-- **Azure Container Apps**: Microservices hosting
-- **Azure Functions**: Serverless computing
-- **Azure Static Web Apps**: Frontend hosting
-- **Azure Kubernetes Service**: Container orchestration (optional)
-
-### Data & Storage
-- **Azure Database for PostgreSQL**: Primary database
-- **Azure Cosmos DB**: Document storage
-- **Azure Cache for Redis**: Caching layer
-- **Azure Blob Storage**: File storage
-- **Azure Data Explorer**: Analytics
-
-### AI & Machine Learning
-- **Azure OpenAI Service**: GPT models and embeddings
-- **Azure Custom Vision**: Computer vision
-- **Azure Machine Learning**: ML model training
-- **Azure Cognitive Services**: AI capabilities
-
-### Networking & Security
-- **Azure Front Door**: Global load balancing
-- **Azure API Management**: API gateway
-- **Azure Key Vault**: Secrets management
-- **Azure Active Directory B2C**: Identity management
-
-### Monitoring & DevOps
-- **Azure Monitor**: Application monitoring
-- **Application Insights**: Performance monitoring
-- **Azure DevOps**: CI/CD pipelines
-- **Azure Log Analytics**: Centralized logging
-
-## 💰 Cost Optimization
-
-### Azure Cost Management
-- **Reserved Instances**: For predictable workloads
-- **Spot Instances**: For non-critical workloads
-- **Auto-scaling**: Dynamic resource allocation
-- **Resource tagging**: Cost allocation tracking
-
-### Performance Optimization
-- **Azure Front Door**: Global CDN and SSL termination
-- **Azure Cache for Redis**: Caching for performance
-- **Azure Content Delivery Network**: Global distribution
-- **Azure Auto-scaling**: Automatic scaling
-
-## 🔒 Security & Compliance
-
-### Azure Security Services
-- **Azure Security Center**: Security monitoring
-- **Azure Sentinel**: SIEM and threat detection
-- **Azure Key Vault**: Secure secrets storage
-- **Azure DDoS Protection**: Network protection
-
-### Compliance
-- **GDPR Compliance**: Data protection
-- **PCI DSS**: Payment security
-- **SOC 2**: Security controls
-- **ISO 27001**: Information security
+- JWT authentication with refresh tokens
+- Role-based access control (RBAC)
+- Input validation and sanitization
+- SQL injection prevention
+- XSS protection
+- CSRF protection
+- Rate limiting
+- Security headers
+- Data encryption
+- GDPR compliance
 
 ## 📊 Monitoring & Analytics
 
-### Azure Monitoring Stack
-- **Azure Monitor**: Resource monitoring
-- **Application Insights**: Application performance
-- **Azure Log Analytics**: Log analysis
-- **Azure Alerts**: Proactive alerting
-
-### Business Metrics
-- Monthly Active Users (MAU)
-- Conversion rates
-- Average order value
-- Platform uptime (99.9% target)
+- Application Insights integration
+- Prometheus metrics collection
+- Grafana dashboards
+- Structured logging
+- Error tracking and alerting
+- Performance monitoring
+- Business metrics tracking
+- Real-time analytics
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+
+- Follow TypeScript best practices
+- Write comprehensive tests
+- Use conventional commits
+- Follow the code style guide
+- Update documentation
 
 ## 📄 License
 
@@ -221,14 +265,18 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- **Documentation**: Check the `docs/` directory
-- **Azure Issues**: Create an issue on GitHub
-- **Azure Support**: Contact Azure support for platform issues
+- **Documentation**: [docs/](docs/)
+- **Issues**: [GitHub Issues](https://github.com/wyoiwyget/wyoiwyget/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/wyoiwyget/wyoiwyget/discussions)
+- **Email**: support@wyoiwyget.com
 
-## 🚀 Azure Deployment Status
+## 🏆 Acknowledgments
 
-[![Azure Static Web Apps CI/CD](https://github.com/your-org/wyoiwyget/actions/workflows/azure-static-web-apps.yml/badge.svg)](https://github.com/your-org/wyoiwyget/actions/workflows/azure-static-web-apps.yml)
+- Azure Cloud Platform
+- OpenAI for AI capabilities
+- Stripe and PayPal for payments
+- The open-source community
 
 ---
 
-**Built with ❤️ on Microsoft Azure for the future of e-commerce** 
+**Built with ❤️ by the Wyoiwyget Team** 

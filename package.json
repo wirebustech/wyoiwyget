@@ -5,96 +5,158 @@
   "private": true,
   "workspaces": [
     "frontend",
-    "backend",
-    "ai-services"
+    "backend"
   ],
   "scripts": {
     "install:all": "npm install && npm run install:frontend && npm run install:backend && npm run install:ai",
     "install:frontend": "cd frontend && npm install",
     "install:backend": "cd backend && npm install",
-    "install:ai": "cd ai-services && pip install -r requirements.txt",
-    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:ai\" \"npm run dev:worker\"",
-    "dev:backend": "cd backend && npm run dev",
+    "install:ai": "cd ai-services && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt",
+    
+    "dev:all": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run dev:ai\"",
     "dev:frontend": "cd frontend && npm run dev",
-    "dev:ai": "cd ai-services && python -m uvicorn main:app --reload --port 8001",
-    "dev:worker": "cd backend && npm run worker",
-    "dev:docker": "docker-compose -f docker-compose.dev.yml up --build",
-    "dev:docker:down": "docker-compose -f docker-compose.dev.yml down",
-    "dev:docker:logs": "docker-compose -f docker-compose.dev.yml logs -f",
-    "build:all": "npm run build:frontend && npm run build:backend && npm run build:ai",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:ai": "cd ai-services && source venv/bin/activate && python main.py",
+    
+    "build:all": "npm run build:frontend && npm run build:backend",
     "build:frontend": "cd frontend && npm run build",
     "build:backend": "cd backend && npm run build",
-    "build:ai": "cd ai-services && echo 'AI services built'",
-    "test:all": "npm run test:frontend && npm run test:backend && npm run test:ai",
-    "test:frontend": "cd frontend && npm test",
-    "test:backend": "cd backend && npm test",
-    "test:ai": "cd ai-services && python -m pytest",
-    "test:integration": "cd backend && npm run test:integration",
-    "test:e2e": "cd frontend && npm run test:e2e",
-    "test:performance": "cd backend && npm run test:performance",
-    "lint:all": "npm run lint:frontend && npm run lint:backend",
+    
+    "test:all": "npm run test:frontend && npm run test:backend && npm run test:ai && npm run test:integration",
+    "test:frontend": "cd frontend && npm run test",
+    "test:backend": "cd backend && npm run test",
+    "test:ai": "cd ai-services && source venv/bin/activate && pytest",
+    "test:integration": "npm run test:e2e && npm run test:load",
+    "test:e2e": "playwright test",
+    "test:load": "artillery run tests/load/load-test.yml",
+    "test:performance": "npm run test:load && npm run test:performance:frontend",
+    "test:performance:frontend": "cd frontend && npm run lighthouse",
+    "test:watch": "concurrently \"npm run test:frontend -- --watch\" \"npm run test:backend -- --watch\"",
+    "test:coverage": "npm run test:frontend -- --coverage && npm run test:backend -- --coverage",
+    
+    "lint:all": "npm run lint:frontend && npm run lint:backend && npm run lint:ai",
     "lint:frontend": "cd frontend && npm run lint",
     "lint:backend": "cd backend && npm run lint",
-    "format:all": "npm run format:frontend && npm run format:backend",
+    "lint:ai": "cd ai-services && source venv/bin/activate && flake8 . && black --check .",
+    
+    "format:all": "npm run format:frontend && npm run format:backend && npm run format:ai",
     "format:frontend": "cd frontend && npm run format",
     "format:backend": "cd backend && npm run format",
+    "format:ai": "cd ai-services && source venv/bin/activate && black . && isort .",
+    
     "type-check:all": "npm run type-check:frontend && npm run type-check:backend",
     "type-check:frontend": "cd frontend && npm run type-check",
     "type-check:backend": "cd backend && npm run type-check",
+    
     "db:setup": "cd backend && npm run db:setup",
-    "db:migrate": "cd backend && npm run migrate",
-    "db:seed": "cd backend && npm run seed",
+    "db:migrate": "cd backend && npm run db:migrate",
+    "db:seed": "cd backend && npm run db:seed",
     "db:reset": "cd backend && npm run db:reset",
-    "db:status": "cd backend && npm run db:status",
-    "start:all": "npm run start:backend && npm run start:frontend",
-    "start:backend": "cd backend && npm start",
-    "start:frontend": "cd frontend && npm start",
+    "db:backup": "cd backend && npm run db:backup",
+    
+    "logs:all": "docker-compose -f docker-compose.dev.yml logs -f",
+    "logs:frontend": "docker-compose -f docker-compose.dev.yml logs -f frontend",
+    "logs:backend": "docker-compose -f docker-compose.dev.yml logs -f backend",
+    "logs:ai": "docker-compose -f docker-compose.dev.yml logs -f ai-services",
+    
+    "health:check": "curl -s http://localhost:3000/health && echo && curl -s http://localhost:8001/health && echo && curl -s http://localhost:3002 > /dev/null && echo 'Frontend: OK'",
+    "monitor:all": "concurrently \"npm run monitor:frontend\" \"npm run monitor:backend\" \"npm run monitor:ai\"",
+    "monitor:frontend": "cd frontend && npm run monitor",
+    "monitor:backend": "cd backend && npm run monitor",
+    "monitor:ai": "cd ai-services && source venv/bin/activate && python -m monitoring.main",
+    
+    "docker:build": "docker-compose -f docker-compose.dev.yml build",
+    "docker:up": "docker-compose -f docker-compose.dev.yml up -d",
+    "docker:down": "docker-compose -f docker-compose.dev.yml down",
+    "docker:restart": "npm run docker:down && npm run docker:up",
+    "docker:logs": "docker-compose -f docker-compose.dev.yml logs -f",
+    "docker:clean": "docker system prune -a && docker volume prune",
+    
+    "deploy:production": "./scripts/deploy-production.sh",
+    "deploy:staging": "./scripts/deploy-staging.sh",
+    "deploy:local": "./scripts/deploy-local.sh",
+    
+    "security:audit": "npm audit && cd frontend && npm audit && cd ../backend && npm audit",
+    "security:scan": "npm run security:audit && npm run security:dependency-check",
+    "security:dependency-check": "cd backend && npm run security:check",
+    
+    "performance:analyze": "npm run performance:frontend && npm run performance:backend",
+    "performance:frontend": "cd frontend && npm run lighthouse",
+    "performance:backend": "cd backend && npm run performance:test",
+    
+    "docs:generate": "npm run docs:api && npm run docs:frontend",
+    "docs:api": "cd backend && npm run docs:generate",
+    "docs:frontend": "cd frontend && npm run docs:generate",
+    "docs:serve": "cd docs && python3 -m http.server 8080",
+    
     "clean:all": "npm run clean:frontend && npm run clean:backend && npm run clean:ai",
     "clean:frontend": "cd frontend && rm -rf .next node_modules",
     "clean:backend": "cd backend && rm -rf dist node_modules",
-    "clean:ai": "cd ai-services && find . -type d -name __pycache__ -delete",
-    "update:all": "npm update && npm run update:frontend && npm run update:backend",
-    "update:frontend": "cd frontend && npm update",
-    "update:backend": "cd backend && npm update",
-    "deploy:local": "npm run build:all && npm run start:all",
-    "health:check": "curl -f http://localhost:3000/health && curl -f http://localhost:3002 && curl -f http://localhost:8001/health",
-    "setup:local": "npm run install:all && npm run db:setup && npm run db:migrate && npm run db:seed",
-    "dev:debug": "DEBUG=* npm run dev:all",
-    "logs:all": "npm run logs:backend && npm run logs:frontend && npm run logs:ai",
-    "logs:backend": "cd backend && npm run logs",
-    "logs:frontend": "cd frontend && npm run logs",
-    "logs:ai": "cd ai-services && echo 'AI services logs'",
-    "monitor:all": "concurrently \"npm run monitor:backend\" \"npm run monitor:frontend\" \"npm run monitor:ai\"",
-    "monitor:backend": "cd backend && npm run monitor",
-    "monitor:frontend": "cd frontend && npm run monitor",
-    "monitor:ai": "cd ai-services && echo 'AI services monitoring'",
-    "security:audit": "npm audit && cd frontend && npm audit && cd ../backend && npm audit",
-    "security:fix": "npm audit fix && cd frontend && npm audit fix && cd ../backend && npm audit fix",
-    "docs:generate": "npm run docs:generate:backend && npm run docs:generate:frontend",
-    "docs:generate:backend": "cd backend && npm run docs:generate",
-    "docs:generate:frontend": "cd frontend && npm run docs:generate",
-    "docs:serve": "cd docs && python -m http.server 8080",
-    "backup:local": "cd backend && npm run backup",
-    "restore:local": "cd backend && npm run restore",
-    "performance:test": "npm run test:performance && npm run test:load",
-    "test:load": "artillery run tests/load/load-test.yml",
-    "test:api": "cd backend && npm run test:api",
-    "test:auth": "cd backend && npm run test:auth",
-    "test:rate-limit": "cd backend && npm run test:rate-limit",
-    "validate:all": "npm run lint:all && npm run type-check:all && npm run test:all",
-    "precommit": "npm run validate:all",
-    "postinstall": "npm run install:all"
+    "clean:ai": "cd ai-services && rm -rf __pycache__ .pytest_cache",
+    
+    "setup:dev": "chmod +x scripts/quick-start.sh && ./scripts/quick-start.sh",
+    "setup:production": "./scripts/setup-production.sh",
+    "setup:ci": "./scripts/setup-ci.sh",
+    
+    "ci:test": "npm run lint:all && npm run type-check:all && npm run test:all && npm run build:all",
+    "ci:deploy": "npm run deploy:production",
+    
+    "release:patch": "npm version patch && git push && git push --tags",
+    "release:minor": "npm version minor && git push && git push --tags",
+    "release:major": "npm version major && git push && git push --tags",
+    
+    "backup:all": "npm run backup:database && npm run backup:files",
+    "backup:database": "cd backend && npm run db:backup",
+    "backup:files": "tar -czf backup-$(date +%Y%m%d-%H%M%S).tar.gz frontend/public backend/uploads",
+    
+    "restore:all": "npm run restore:database && npm run restore:files",
+    "restore:database": "cd backend && npm run db:restore",
+    "restore:files": "echo 'Please manually restore files from backup'",
+    
+    "maintenance:on": "cd backend && npm run maintenance:enable",
+    "maintenance:off": "cd backend && npm run maintenance:disable",
+    "maintenance:status": "cd backend && npm run maintenance:status",
+    
+    "ssl:generate": "./scripts/generate-ssl.sh",
+    "ssl:renew": "./scripts/renew-ssl.sh",
+    
+    "monitoring:setup": "./scripts/setup-monitoring.sh",
+    "monitoring:start": "./scripts/start-monitoring.sh",
+    "monitoring:stop": "./scripts/stop-monitoring.sh",
+    
+    "backup:schedule": "crontab -e",
+    "backup:list": "ls -la backups/",
+    "backup:cleanup": "find backups/ -name '*.sql' -mtime +30 -delete",
+    
+    "update:dependencies": "npm update && cd frontend && npm update && cd ../backend && npm update",
+    "update:security": "npm audit fix && cd frontend && npm audit fix && cd ../backend && npm audit fix",
+    
+    "start": "npm run dev:all",
+    "stop": "npm run docker:down",
+    "restart": "npm run stop && npm run start",
+    "status": "npm run health:check"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "nodemon": "^3.0.2",
     "typescript": "^5.3.3",
+    "@types/node": "^20.10.5",
     "eslint": "^8.56.0",
     "prettier": "^3.1.1",
     "husky": "^8.0.3",
     "lint-staged": "^15.2.0",
-    "artillery": "^2.0.0-27"
+    "commitizen": "^4.3.0",
+    "cz-conventional-changelog": "^3.3.0",
+    "semantic-release": "^22.0.7",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/npm": "^10.0.4",
+    "artillery": "^2.0.0-27",
+    "playwright": "^1.40.1",
+    "lighthouse": "^11.6.0",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "faker": "^6.6.6"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -107,14 +169,14 @@
   "keywords": [
     "e-commerce",
     "ai",
-    "avatar-generation",
     "virtual-try-on",
-    "fashion",
-    "shopping",
-    "typescript",
+    "avatar-generation",
+    "azure",
     "nextjs",
     "express",
-    "fastapi"
+    "fastapi",
+    "typescript",
+    "python"
   ],
   "author": "Wyoiwyget Team",
   "license": "MIT",
@@ -129,7 +191,8 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged"
+      "pre-commit": "lint-staged",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
   },
   "lint-staged": {
@@ -137,7 +200,7 @@
       "eslint --fix",
       "prettier --write"
     ],
-    "*.{json,md}": [
+    "*.{json,md,yml,yaml}": [
       "prettier --write"
     ]
   }

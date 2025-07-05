@@ -1,0 +1,116 @@
+config:
+  target: 'http://localhost:3000'
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 10
+      name: "Ramp up"
+    - duration: 300
+      arrivalRate: 20
+      name: "Sustained load"
+    - duration: 60
+      arrivalRate: 5
+      name: "Cool down"
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+      User-Agent: 'Artillery Load Test'
+  processor: './functions.js'
+
+scenarios:
+  - name: "Homepage and Product Browsing"
+    weight: 40
+    flow:
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 200
+      - think: 2
+      - get:
+          url: "/api/products"
+          expect:
+            - statusCode: 200
+      - think: 1
+      - get:
+          url: "/api/products?category=shoes"
+          expect:
+            - statusCode: 200
+      - think: 3
+
+  - name: "User Registration and Login"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/auth/register"
+          json:
+            email: "test{{ $randomString() }}@example.com"
+            password: "TestPassword123!"
+            firstName: "Test"
+            lastName: "User"
+          expect:
+            - statusCode: [200, 201]
+      - think: 2
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "test@example.com"
+            password: "TestPassword123!"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+          expect:
+            - statusCode: 200
+      - think: 1
+
+  - name: "Product Search and Details"
+    weight: 25
+    flow:
+      - get:
+          url: "/api/products"
+          expect:
+            - statusCode: 200
+      - think: 1
+      - get:
+          url: "/api/products?search=nike"
+          expect:
+            - statusCode: 200
+      - think: 2
+      - get:
+          url: "/api/products/{{ $randomString() }}"
+          expect:
+            - statusCode: [200, 404]
+      - think: 1
+
+  - name: "Shopping Cart Operations"
+    weight: 15
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "test@example.com"
+            password: "TestPassword123!"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+          expect:
+            - statusCode: 200
+      - think: 1
+      - post:
+          url: "/api/cart/add"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            productId: "{{ $randomString() }}"
+            quantity: 1
+          expect:
+            - statusCode: [200, 404]
+      - think: 1
+      - get:
+          url: "/api/cart"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+      - think: 2 
