@@ -1,0 +1,349 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: wyoiwyget_postgres_dev
+    environment:
+      POSTGRES_DB: wyoiwyget
+      POSTGRES_USER: wyoiwyget_admin
+      POSTGRES_PASSWORD: wyoiwyget_dev_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - wyoiwyget_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wyoiwyget_admin -d wyoiwyget"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: wyoiwyget_redis_dev
+    command: redis-server --requirepass wyoiwyget_redis_password
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - wyoiwyget_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO (S3-compatible storage for local development)
+  minio:
+    image: minio/minio:latest
+    container_name: wyoiwyget_minio_dev
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: wyoiwyget_minio_user
+      MINIO_ROOT_PASSWORD: wyoiwyget_minio_password
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - wyoiwyget_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # MailHog (Email testing)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: wyoiwyget_mailhog_dev
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - wyoiwyget_network
+
+  # Elasticsearch (for search functionality)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: wyoiwyget_elasticsearch_dev
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - wyoiwyget_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Kibana (for Elasticsearch visualization)
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: wyoiwyget_kibana_dev
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - wyoiwyget_network
+
+  # Prometheus (for metrics)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: wyoiwyget_prometheus_dev
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - wyoiwyget_network
+
+  # Grafana (for metrics visualization)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: wyoiwyget_grafana_dev
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./infrastructure/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - wyoiwyget_network
+
+  # Jaeger (for distributed tracing)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: wyoiwyget_jaeger_dev
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"  # Web UI
+      - "14268:14268"  # HTTP collector
+      - "14250:14250"  # gRPC collector
+    networks:
+      - wyoiwyget_network
+
+  # Backend API (Development)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: wyoiwyget_backend_dev
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://wyoiwyget_admin:wyoiwyget_dev_password@postgres:5432/wyoiwyget
+      - REDIS_URL=redis://:wyoiwyget_redis_password@redis:6379
+      - JWT_SECRET=dev_jwt_secret_key_change_in_production
+      - SESSION_SECRET=dev_session_secret_change_in_production
+      - STRIPE_SECRET_KEY=sk_test_your_stripe_test_key
+      - PAYPAL_CLIENT_ID=your_paypal_client_id
+      - PAYPAL_CLIENT_SECRET=your_paypal_client_secret
+      - SENDGRID_API_KEY=your_sendgrid_api_key
+      - AWS_SES_ACCESS_KEY_ID=your_aws_ses_access_key
+      - AWS_SES_SECRET_ACCESS_KEY=your_aws_ses_secret_key
+      - AZURE_OPENAI_ENDPOINT=https://your-openai-resource.openai.azure.com/
+      - AZURE_OPENAI_API_KEY=your_azure_openai_api_key
+      - STORAGE_ACCOUNT_NAME=wyoiwygetstorage
+      - STORAGE_ACCOUNT_KEY=your_storage_account_key
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=wyoiwyget_minio_user
+      - MINIO_SECRET_KEY=wyoiwyget_minio_password
+      - MAIL_HOST=mailhog
+      - MAIL_PORT=1025
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - PROMETHEUS_URL=http://prometheus:9090
+      - JAEGER_URL=http://jaeger:14268
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - wyoiwyget_network
+    command: npm run dev
+
+  # Frontend (Development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: wyoiwyget_frontend_dev
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3000/api
+      - NEXT_PUBLIC_AI_SERVICES_URL=http://localhost:8001
+      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
+      - NEXT_PUBLIC_PAYPAL_CLIENT_ID=your_paypal_client_id
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - wyoiwyget_network
+    command: npm run dev
+
+  # AI Services (Development)
+  ai-services:
+    build:
+      context: ./ai-services
+      dockerfile: Dockerfile.dev
+    container_name: wyoiwyget_ai_services_dev
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql://wyoiwyget_admin:wyoiwyget_dev_password@postgres:5432/wyoiwyget
+      - REDIS_URL=redis://:wyoiwyget_redis_password@redis:6379
+      - AZURE_OPENAI_ENDPOINT=https://your-openai-resource.openai.azure.com/
+      - AZURE_OPENAI_API_KEY=your_azure_openai_api_key
+      - AZURE_STORAGE_CONNECTION_STRING=your_azure_storage_connection_string
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=wyoiwyget_minio_user
+      - MINIO_SECRET_KEY=wyoiwyget_minio_password
+      - JWT_SECRET=dev_jwt_secret_key_change_in_production
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./ai-services:/app
+      - /app/__pycache__
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - wyoiwyget_network
+    command: python -m uvicorn main:app --reload --host 0.0.0.0 --port 8001
+
+  # Queue Worker (Development)
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: wyoiwyget_worker_dev
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://wyoiwyget_admin:wyoiwyget_dev_password@postgres:5432/wyoiwyget
+      - REDIS_URL=redis://:wyoiwyget_redis_password@redis:6379
+      - JWT_SECRET=dev_jwt_secret_key_change_in_production
+      - SESSION_SECRET=dev_session_secret_change_in_production
+      - STRIPE_SECRET_KEY=sk_test_your_stripe_test_key
+      - PAYPAL_CLIENT_ID=your_paypal_client_id
+      - PAYPAL_CLIENT_SECRET=your_paypal_client_secret
+      - SENDGRID_API_KEY=your_sendgrid_api_key
+      - AWS_SES_ACCESS_KEY_ID=your_aws_ses_access_key
+      - AWS_SES_SECRET_ACCESS_KEY=your_aws_ses_secret_key
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - wyoiwyget_network
+    command: npm run worker
+
+  # NGINX (Reverse proxy for development)
+  nginx:
+    image: nginx:alpine
+    container_name: wyoiwyget_nginx_dev
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx/nginx.dev.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - backend
+      - frontend
+      - ai-services
+    networks:
+      - wyoiwyget_network
+
+  # Adminer (Database management)
+  adminer:
+    image: adminer:latest
+    container_name: wyoiwyget_adminer_dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - wyoiwyget_network
+
+  # Redis Commander (Redis management)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: wyoiwyget_redis_commander_dev
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:wyoiwyget_redis_password
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - wyoiwyget_network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  wyoiwyget_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 

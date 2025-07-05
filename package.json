@@ -1,0 +1,144 @@
+{
+  "name": "wyoiwyget",
+  "version": "1.0.0",
+  "description": "AI-powered e-commerce aggregator platform",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "ai-services"
+  ],
+  "scripts": {
+    "install:all": "npm install && npm run install:frontend && npm run install:backend && npm run install:ai",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "install:ai": "cd ai-services && pip install -r requirements.txt",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:ai\" \"npm run dev:worker\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:ai": "cd ai-services && python -m uvicorn main:app --reload --port 8001",
+    "dev:worker": "cd backend && npm run worker",
+    "dev:docker": "docker-compose -f docker-compose.dev.yml up --build",
+    "dev:docker:down": "docker-compose -f docker-compose.dev.yml down",
+    "dev:docker:logs": "docker-compose -f docker-compose.dev.yml logs -f",
+    "build:all": "npm run build:frontend && npm run build:backend && npm run build:ai",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "build:ai": "cd ai-services && echo 'AI services built'",
+    "test:all": "npm run test:frontend && npm run test:backend && npm run test:ai",
+    "test:frontend": "cd frontend && npm test",
+    "test:backend": "cd backend && npm test",
+    "test:ai": "cd ai-services && python -m pytest",
+    "test:integration": "cd backend && npm run test:integration",
+    "test:e2e": "cd frontend && npm run test:e2e",
+    "test:performance": "cd backend && npm run test:performance",
+    "lint:all": "npm run lint:frontend && npm run lint:backend",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && npm run lint",
+    "format:all": "npm run format:frontend && npm run format:backend",
+    "format:frontend": "cd frontend && npm run format",
+    "format:backend": "cd backend && npm run format",
+    "type-check:all": "npm run type-check:frontend && npm run type-check:backend",
+    "type-check:frontend": "cd frontend && npm run type-check",
+    "type-check:backend": "cd backend && npm run type-check",
+    "db:setup": "cd backend && npm run db:setup",
+    "db:migrate": "cd backend && npm run migrate",
+    "db:seed": "cd backend && npm run seed",
+    "db:reset": "cd backend && npm run db:reset",
+    "db:status": "cd backend && npm run db:status",
+    "start:all": "npm run start:backend && npm run start:frontend",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm start",
+    "clean:all": "npm run clean:frontend && npm run clean:backend && npm run clean:ai",
+    "clean:frontend": "cd frontend && rm -rf .next node_modules",
+    "clean:backend": "cd backend && rm -rf dist node_modules",
+    "clean:ai": "cd ai-services && find . -type d -name __pycache__ -delete",
+    "update:all": "npm update && npm run update:frontend && npm run update:backend",
+    "update:frontend": "cd frontend && npm update",
+    "update:backend": "cd backend && npm update",
+    "deploy:local": "npm run build:all && npm run start:all",
+    "health:check": "curl -f http://localhost:3000/health && curl -f http://localhost:3002 && curl -f http://localhost:8001/health",
+    "setup:local": "npm run install:all && npm run db:setup && npm run db:migrate && npm run db:seed",
+    "dev:debug": "DEBUG=* npm run dev:all",
+    "logs:all": "npm run logs:backend && npm run logs:frontend && npm run logs:ai",
+    "logs:backend": "cd backend && npm run logs",
+    "logs:frontend": "cd frontend && npm run logs",
+    "logs:ai": "cd ai-services && echo 'AI services logs'",
+    "monitor:all": "concurrently \"npm run monitor:backend\" \"npm run monitor:frontend\" \"npm run monitor:ai\"",
+    "monitor:backend": "cd backend && npm run monitor",
+    "monitor:frontend": "cd frontend && npm run monitor",
+    "monitor:ai": "cd ai-services && echo 'AI services monitoring'",
+    "security:audit": "npm audit && cd frontend && npm audit && cd ../backend && npm audit",
+    "security:fix": "npm audit fix && cd frontend && npm audit fix && cd ../backend && npm audit fix",
+    "docs:generate": "npm run docs:generate:backend && npm run docs:generate:frontend",
+    "docs:generate:backend": "cd backend && npm run docs:generate",
+    "docs:generate:frontend": "cd frontend && npm run docs:generate",
+    "docs:serve": "cd docs && python -m http.server 8080",
+    "backup:local": "cd backend && npm run backup",
+    "restore:local": "cd backend && npm run restore",
+    "performance:test": "npm run test:performance && npm run test:load",
+    "test:load": "artillery run tests/load/load-test.yml",
+    "test:api": "cd backend && npm run test:api",
+    "test:auth": "cd backend && npm run test:auth",
+    "test:rate-limit": "cd backend && npm run test:rate-limit",
+    "validate:all": "npm run lint:all && npm run type-check:all && npm run test:all",
+    "precommit": "npm run validate:all",
+    "postinstall": "npm run install:all"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "nodemon": "^3.0.2",
+    "typescript": "^5.3.3",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "artillery": "^2.0.0-27"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wyoiwyget/wyoiwyget.git"
+  },
+  "keywords": [
+    "e-commerce",
+    "ai",
+    "avatar-generation",
+    "virtual-try-on",
+    "fashion",
+    "shopping",
+    "typescript",
+    "nextjs",
+    "express",
+    "fastapi"
+  ],
+  "author": "Wyoiwyget Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wyoiwyget/wyoiwyget/issues"
+  },
+  "homepage": "https://wyoiwyget.com",
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  }
+} 
